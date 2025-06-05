@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "VideoMath Tutor",
+  "version": "1.0",
+  "description": "Solve math formulas from paused educational videos with OCR, LaTeX rendering, and hints.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["http://127.0.0.1:8000/"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["katex.min.js", "content.js"],
+      "css": ["katex.min.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["katex.min.css", "katex.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

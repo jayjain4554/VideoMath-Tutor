@@ -1,0 +1,18 @@
+fastapi
+uvicorn
+pillow
+numpy
+opencv-python
+python-multipart
+tqdm
+sympy
+pytesseract
+python-dotenv
+
+# Only if using Pix2Tex
+torch
+transformers
+pix2tex
+
+# Optional if calling OpenAI fallback
+openai

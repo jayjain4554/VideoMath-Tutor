@@ -1,0 +1,23 @@
+# Python virtual env
+venv/
+__pycache__/
+*.pyc
+
+# FastAPI upload/temp folders
+uploads/
+*.log
+*.tmp
+
+# VS Code and IDE settings
+.vscode/
+.idea/
+
+# macOS / Windows junk
+.DS_Store
+Thumbs.db
+
+# Node/npm (if added later)
+node_modules/
+
+# Chrome extension builds (if any in future)
+dist/

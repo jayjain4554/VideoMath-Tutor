@@ -1,0 +1,43 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f9fafb;
+  color: #333;
+  width: 260px;
+  padding: 15px;
+}
+
+.container {
+  text-align: center;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: #2c3e50;
+}
+
+p {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 14px;
+}
+
+button {
+  font-size: 14px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+
+#toggle-btn.on {
+  background-color: #28a745;
+  color: white;
+}
+
+#toggle-btn.off {
+  background-color: #dc3545;
+  color: white;
+}
