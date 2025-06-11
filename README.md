@@ -84,8 +84,11 @@ VideoMath-Tutor/
 
 ## Screenshots
 
-![Screenshot](screenshots/sample1.png)
-![Overlay](screenshots/sample2.png)
+![Screenshot 2025-06-11 143540](https://github.com/user-attachments/assets/3453737e-c0ed-40a3-a422-4d48dc010834)
+![Screenshot 2025-06-11 143609](https://github.com/user-attachments/assets/b215ad5c-5a42-4d7f-9ad2-ca0366066f66)
+![Screenshot 2025-06-11 143635](https://github.com/user-attachments/assets/b38afba9-b671-479b-bd76-b0ad785998dd)
+![Screenshot 2025-06-11 144139](https://github.com/user-attachments/assets/5b2a3562-d141-4e01-87e1-e898376ade67)
+
 
 ---
 
