@@ -1,109 +1,135 @@
-# VideoMath Tutor
+
+# 🎥 VideoMath Tutor
 
 **Solve math problems from educational videos using OCR + AI!**
 
-VideoMath Tutor is a smart Chrome Extension + Python backend tool that captures paused video frames, extracts math expressions using OCR (Tesseract + Pix2Tex), and solves them using symbolic math or GPT assistance.
+VideoMath Tutor is a smart Chrome Extension + Python backend that captures paused video frames, extracts math expressions using OCR (Pix2Tex or Tesseract), and solves them using Together AI for detailed step-by-step solutions.
 
 ---
 
-## Features
+## 🚀 Features
 
-* ✅ **Pause any video** to extract visible math problems
-* 🔍 **OCR extraction** with Pix2Tex & Tesseract
-* 📐 **Solve equations** using SymPy, with GPT fallback
-* 📋 **Copy LaTeX**, 🧠 AI-generated hints
-* 🧾 **Render equations** in KaTeX overlay
-* 🧠 Built-in hint engine for basic strategies
-* 🌐 **Search on Web** button for quick lookups
-* 🧲 Deactivate/Reactivate toggle built-in
-
----
-
-## How It Works
-
-1. **User pauses** a video on any page
-2. **Content script** captures the frame
-3. Image is sent to **FastAPI OCR backend**
-4. OCR runs via Pix2Tex/Tesseract → returns LaTeX
-5. Result is shown in a popup + option to solve, search, hint
+- ⏸ **Pause any video** to auto-capture math problems
+- 🔍 OCR via **Pix2Tex CLI** (preferred) or **Tesseract** fallback
+- 🧠 **AI-powered solving** using Together AI (Mixtral / LLaMA)
+- 🧾 Render LaTeX in an elegant **KaTeX popup**
+- ✂ Copy, 🌐 Search, and ✅ Solve directly from overlay
+- 💡 Built-in hint engine for learning context
+- 🧲 Toggle extension on/off anytime
 
 ---
 
-## Installation
+## ⚙ How It Works
 
-### Backend (FastAPI server)
+1. User **pauses a video**
+2. Content script captures the **video frame**
+3. Frame sent to **FastAPI backend** at `/ocr/single`
+4. OCR returns LaTeX (Pix2Tex or Tesseract)
+5. User sees formatted math + options (solve, copy, hints)
+6. On clicking **Solve**, `/solve` sends it to Together AI
+7. Solution is cleaned and shown inline 🎯
+
+---
+
+
+## 🛠 Installation
+
+#### Backend (FastAPI + Together AI)
 
 ```bash
 # Clone the repo
 git clone https://github.com/jayjain4554/VideoMath-Tutor.git
 cd VideoMath-Tutor/backend
+````
 
-# Create a virtual environment
+**Create virtual environment**
+````markdown
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate  # (Windows: venv\Scripts\activate)
+````
 
-# Install dependencies
+**Install dependencies**
+````markdown
 pip install -r requirements.txt
+````
 
-# Start the FastAPI server
+**Run server**
+````markdown
 uvicorn main:app --reload
-```
+````
 
-> Backend runs at `http://127.0.0.1:8000`
+🧠 **Note**:
 
-Make sure Tesseract is installed and accessible in PATH. For best results, also install and set up [Pix2Tex](https://github.com/lukas-blecher/LaTeX-OCR).
+* Ensure you have `Tesseract` installed and in PATH
+* Install [Pix2Tex](https://github.com/lukas-blecher/LaTeX-OCR) CLI for better OCR accuracy
+* Add your **Together AI API key** to the environment (`TOGETHER_API_KEY`)
 
-### Chrome Extension
+> Server runs at `http://127.0.0.1:8000`
+
+---
+
+### 2️⃣ Chrome Extension
 
 1. Go to `chrome://extensions`
 2. Enable **Developer Mode**
 3. Click **Load Unpacked**
-4. Select the `/extension` folder from this repo
+4. Select the `extension/` folder from this repo
 
-Click the extension icon → **Activate Extension**
+📌 Then click the extension icon and **Activate Extension** from popup
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 VideoMath-Tutor/
 ├── backend/
-│   ├── main.py              # FastAPI OCR and solver logic
+│   ├── main.py              # FastAPI app with OCR + Together AI solve
 │   ├── requirements.txt     # Python dependencies
-│   └── ocr_engine/          # Pix2Tex repo if installed locally
+│   ├── .env                 # TOGETHER_API_KEY (secure)
+│   └── ocr_engine/          # Optional: Pix2Tex local installation
 │
 ├── extension/
-│   ├── content.js           # OCR & solver logic in browser
-│   ├── popup.html/.js/.css  # UI to trigger script injection
-│   ├── manifest.json        # Chrome extension config
-│   └── katex.min.js/css     # Math rendering
+│   ├── content.js           # Core script to capture & display results
+│   ├── manifest.json        # Chrome extension setup
+│   ├── popup.html/.js/.css  # UI to toggle extension
+│   └── katex.min.js/.css    # For math rendering
 ```
 
 ---
 
-## Screenshots
+## 📸 Screenshots
 
-![Screenshot 2025-06-11 143540](https://github.com/user-attachments/assets/3453737e-c0ed-40a3-a422-4d48dc010834)
-![Screenshot 2025-06-11 143609](https://github.com/user-attachments/assets/b215ad5c-5a42-4d7f-9ad2-ca0366066f66)
-![Screenshot 2025-06-11 143635](https://github.com/user-attachments/assets/b38afba9-b671-479b-bd76-b0ad785998dd)
-![Screenshot 2025-06-11 144139](https://github.com/user-attachments/assets/5b2a3562-d141-4e01-87e1-e898376ade67)
-
-
----
-
-## Future Ideas
-
-* ✅ LaTeX-to-speech for accessibility
-* 🤝 Integration with Wolfram Alpha API
-* 📊 Usage analytics and improvement tracking
-* 🎯 Interactive steps view for solution breakdown
-
+<img src="https://github.com/user-attachments/assets/3453737e-c0ed-40a3-a422-4d48dc010834" width="480">
+<img src="https://github.com/user-attachments/assets/b215ad5c-5a42-4d7f-9ad2-ca0366066f66" width="480">
+<img src="https://github.com/user-attachments/assets/b38afba9-b671-479b-bd76-b0ad785998dd" width="480">
+<img src="https://github.com/user-attachments/assets/5b2a3562-d141-4e01-87e1-e898376ade67" width="480">
 
 ---
 
-## Author
+## 🧠 AI Solving Engine
 
-Made by **Jay Jain** — feel free to reach out via GitHub for contributions, ideas, or feedback!
+The backend uses the [Together AI Inference API](https://api.together.ai/models) to solve LaTeX equations via models like:
 
-> Enjoy learning math from video like never before. 🎥➕🧠
+* 🔸 `mistralai/Mixtral-8x7B-Instruct-v0.1` (default)
+* ✳️ Easy to upgrade to LLaMA 3 or GPT-NeoX
+
+It returns clean, step-by-step solutions that are parsed into human-readable output using a custom LaTeX cleaner.
+
+---
+
+## 💡 Future Roadmap
+
+* 📢 Add LaTeX-to-speech for accessibility
+* 🤖 Plug into Wolfram Alpha API for verified math
+* 📈 Build a learning dashboard and insights tracker
+* 🔍 Interactive step-by-step explanation viewer
+
+---
+
+## 👨‍💻 Author
+
+Made with ❤️ by **Jay Jain**
+Feel free to [contribute, suggest](https://github.com/jayjain4554/VideoMath-Tutor), or reach out for improvements.
+
+> Learn math from videos — smarter than ever. 🧠🎬➕
