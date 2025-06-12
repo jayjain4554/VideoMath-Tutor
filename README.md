@@ -100,10 +100,11 @@ VideoMath-Tutor/
 
 ## 📸 Screenshots
 
-<img src="https://github.com/user-attachments/assets/3453737e-c0ed-40a3-a422-4d48dc010834" width="480">
-<img src="https://github.com/user-attachments/assets/b215ad5c-5a42-4d7f-9ad2-ca0366066f66" width="480">
-<img src="https://github.com/user-attachments/assets/b38afba9-b671-479b-bd76-b0ad785998dd" width="480">
-<img src="https://github.com/user-attachments/assets/5b2a3562-d141-4e01-87e1-e898376ade67" width="480">
+![Screenshot 2025-06-12 133644](https://github.com/user-attachments/assets/af2914fd-442f-4390-a626-d1ef9831fbc3)
+![Screenshot 2025-06-12 133657](https://github.com/user-attachments/assets/e88061cf-1090-442d-9b1f-05841203577e)
+![Screenshot 2025-06-12 133714](https://github.com/user-attachments/assets/923f3d79-6af2-490b-b551-dda30c5de2b6)
+![Screenshot 2025-06-12 133736](https://github.com/user-attachments/assets/4533cd5a-93aa-4ba0-9db3-63fa41a9ff84)
+![Screenshot 2025-06-12 133826](https://github.com/user-attachments/assets/8e1a6fdc-1d7c-4c62-9b95-87e2b60f126b)
 
 ---
 
