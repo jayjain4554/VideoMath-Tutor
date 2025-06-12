@@ -8,21 +8,20 @@ import tempfile
 import subprocess
 import logging
 import shutil
-import openai
 import re
-from sympy import symbols, Eq, solve, simplify
+import together
+from sympy import symbols, Eq, solve
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
 
-# Logging
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Setup Together API
+together.api_key = os.getenv("TOGETHER_API_KEY")  # Use env var like TOGETHER_API_KEY
+
 # FastAPI setup
-app = FastAPI(
-    title="Math OCR API",
-    description="Extract and solve LaTeX math expressions from images.",
-    version="1.1.0"
-)
+app = FastAPI(title="Math OCR API", version="2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,7 +32,7 @@ app.add_middleware(
 )
 
 transformations = standard_transformations + (implicit_multiplication_application,)
-openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 class MathOCRProcessor:
     def __init__(self):
@@ -71,17 +70,9 @@ class MathOCRProcessor:
             logger.error(f"Preprocessing failed: {e}")
             return image_path
 
-    def extract_with_pix2tex_python(self, image_path: str) -> str:
-        try:
-            from pix2tex.cli import LatexOCR
-            model = LatexOCR()
-            return model(image_path).strip()
-        except Exception as e:
-            return f"Pix2Tex Python error: {e}"
-
     def extract_with_pix2tex_cli(self, image_path: str) -> str:
         try:
-            result = subprocess.run(['pix2tex', image_path], capture_output=True, text=True, timeout=30)
+            result = subprocess.run(['pix2tex', image_path], capture_output=True, text=True, timeout=60)
             return result.stdout.strip() if result.returncode == 0 else f"Pix2Tex CLI error: {result.stderr.strip()}"
         except Exception as e:
             return f"Pix2Tex CLI error: {e}"
@@ -110,13 +101,12 @@ class MathOCRProcessor:
                 temp_files.append(processed_path)
 
             results = []
-            if self.pix2tex_available:
-                results.append({"method": "Pix2Tex Python", "result": self.extract_with_pix2tex_python(processed_path)})
-                results.append({"method": "Pix2Tex CLI", "result": self.extract_with_pix2tex_cli(processed_path)})
+            results.append({"method": "Pix2Tex CLI", "result": self.extract_with_pix2tex_cli(processed_path)})
             if self.tesseract_available:
                 results.append({"method": "Tesseract", "result": self.extract_with_tesseract(processed_path)})
 
             best_result = next((r for r in results if 'error' not in r['result'].lower()), results[0])
+            best_result['cleaned'] = clean_latex_result(best_result['result'])
 
             return {
                 "filename": image_file.filename,
@@ -129,9 +119,12 @@ class MathOCRProcessor:
             return {"filename": image_file.filename, "status": "error", "error": str(e)}
         finally:
             for path in temp_files:
-                if os.path.exists(path): os.remove(path)
+                if os.path.exists(path):
+                    os.remove(path)
+
 
 processor = MathOCRProcessor()
+
 
 @app.get("/")
 async def root():
@@ -143,6 +136,7 @@ async def root():
         }
     }
 
+
 @app.post("/ocr/single")
 async def extract_single_image(file: UploadFile = File(...)):
     if not file.content_type.startswith('image/'):
@@ -151,6 +145,7 @@ async def extract_single_image(file: UploadFile = File(...)):
     if result["status"] == "error":
         raise HTTPException(status_code=400, detail=result["error"])
     return result
+
 
 @app.post("/ocr")
 async def extract_multiple_images(files: List[UploadFile] = File(...)):
@@ -166,64 +161,63 @@ async def extract_multiple_images(files: List[UploadFile] = File(...)):
         "results": results
     }
 
-# --- Solver logic ---
-def clean_latex_input(expr: str) -> str:
-    expr = expr.replace("\\quad", " ").replace("\\left", "").replace("\\right", "")
-    expr = re.sub(r"\\[a-zA-Z]+", "", expr)
-    expr = expr.replace("{", "").replace("}", "").replace("^", "**").replace("\\", "").strip()
-    return next((line.strip() for line in expr.splitlines() if any(op in line for op in ["=", "+", "-", "*", "/"])), expr)
 
-from openai import OpenAIError
+# -------- LaTeX Cleaning & Solver Section --------
 
-def solve_with_gpt(expr: str) -> str:
+def clean_latex_result(raw: str) -> str:
+    raw = re.sub(r'^.*?:\s*', '', raw)
+    raw = re.sub(r'\\begin{array}{.*?}|\\end{array}', '', raw)
+    raw = raw.replace("\\qquad", "").replace("\\quad", "")
+    raw = raw.replace("\\\\", "\n")
+    equations = re.findall(r"\{\{(.*?)\}\}", raw)
+    if not equations:
+        equations = raw.splitlines()
+    cleaned = [eq.strip() for eq in equations if any(op in eq for op in "=+-*/")]
+    return "\n".join(cleaned)
+
+
+def extract_equations_from_latex(latex: str) -> List[str]:
+    latex = re.sub(r'\\begin{array}{.*?}|\\end{array}', '', latex)
+    latex = re.sub(r'\\[a-zA-Z]+', '', latex)
+    latex = latex.replace("{", "").replace("}", "")
+    latex = latex.replace("\\\\", "\n")
+    lines = [line.strip() for line in latex.splitlines() if any(op in line for op in "=+-*/")]
+    return lines
+
+def solve_with_together_ai(expr: str) -> str:
     try:
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-
-        if not openai.api_key:
-            return "OpenAI API key not configured."
-
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful and concise math tutor."},
-                {"role": "user", "content": f"Solve and explain this math problem step-by-step: {expr}"}
-            ],
+        prompt = f"Solve and explain step-by-step: {expr}"
+        response = together.Complete.create(
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+            prompt=prompt,
+            max_tokens=512,
             temperature=0.4,
-            max_tokens=500
+            top_k=50,
+            top_p=0.95,
+            repetition_penalty=1.1,
         )
-        return response.choices[0].message.content.strip()
+        # ✅ Corrected parsing
+        return response['choices'][0]['text'].strip()
     except Exception as e:
-        return f"GPT fallback failed: {str(e)}"
+        return f"Together AI error: {str(e)}"
+
 
 
 @app.post("/solve")
 async def solve_expression(payload: dict = Body(...)):
-    try:
-        expr_str = payload.get("expression", "").strip()
-        expr_str = expr_str.replace("^", "**")
+    raw_expr = payload.get("expression", "").strip()
+    equations = extract_equations_from_latex(raw_expr)
 
-        x = symbols("x")
-        if "=" in expr_str:
-            lhs, rhs = expr_str.split("=")
-            eq = Eq(parse_expr(lhs), parse_expr(rhs))
-            solution = solve(eq, x)
-            return {
-                "solution": str(solution),
-                "steps": f"Solved for x in: {eq}"
-            }
-        else:
-            return {
-                "solution": "Not an equation",
-                "steps": "No '=' found"
-            }
+    if not equations:
+        return {"error": "No solvable equations found."}
 
-    except Exception as e:
-        fallback = solve_with_gpt(expr_str)
-        return {
-            "solution": None,
-            "steps": "SymPy failed to solve. Fallback result:",
-            "gpt_fallback": fallback
-        }
+    results = []
+    for eq in equations:
+        solution = solve_with_together_ai(eq)
+        results.append({"expression": eq, "solution": solution})
+
+    return {"total_equations": len(results), "results": results}
+
 
 if __name__ == "__main__":
     import uvicorn
