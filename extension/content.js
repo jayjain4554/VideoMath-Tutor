@@ -38,6 +38,27 @@ function convertDataUrlToFormData(dataUrl) {
   return formData;
 }
 
+function cleanLaTeXExplanation(raw) {
+  return raw
+    .replace(/\\\\/g, '<br>')
+    .replace(/\\,|\\;/g, ' ')
+    .replace(/\\frac{([^}]+)}{([^}]+)}/g, (_, a, b) => `${a}⁄${b}`)
+    .replace(/\\sqrt{([^}]+)}/g, (_, v) => `√(${v})`)
+    .replace(/\\neq/g, '≠')
+    .replace(/\\leq/g, '≤')
+    .replace(/\\geq/g, '≥')
+    .replace(/\\cdot/g, '·')
+    .replace(/\\text{([^}]*)}/g, (_, text) => text)
+    .replace(/\^2/g, '²')
+    .replace(/\^3/g, '³')
+    .replace(/\^(-?\d+)/g, (_, n) => `^${n}`)
+    .replace(/\\left|\\right/g, '')
+    .replace(/\$/g, '')
+    .replace(/\\begin{.*?}|\\end{.*?}/g, '')
+    .replace(/\\[a-zA-Z]+/g, '')
+    .trim();
+}
+
 function showOverlay(latex, hints = [], solution = null) {
   const old = document.getElementById('videomath-tutor-overlay');
   if (old) old.remove();
@@ -85,13 +106,58 @@ function showOverlay(latex, hints = [], solution = null) {
   const solveBtn = document.createElement('button');
   solveBtn.textContent = '✅ Solve';
   solveBtn.onclick = async () => {
-    const res = await fetch('http://127.0.0.1:8000/solve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ expression: latex })
-    });
-    const data = await res.json();
-    alert(`✅ Solution:\n${data.solution}\n\n🧠 Explanation:\n${data.steps}${data.gpt_fallback ? '\n\n🤖 GPT Help:\n' + data.gpt_fallback : ''}`);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/solve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expression: latex })
+      });
+      const data = await res.json();
+
+      const solutionDiv = document.createElement('div');
+      solutionDiv.style.marginTop = '10px';
+
+      const solTitle = document.createElement('div');
+      solTitle.innerHTML = '✅ <strong>Solution & Explanation</strong>:';
+      solTitle.style.marginBottom = '8px';
+      solutionDiv.appendChild(solTitle);
+
+      const explanationDiv = document.createElement('div');
+      explanationDiv.style.whiteSpace = 'pre-wrap';
+      explanationDiv.style.background = '#f9f9f9';
+      explanationDiv.style.border = '1px solid #ccc';
+      explanationDiv.style.padding = '10px';
+      explanationDiv.style.borderRadius = '6px';
+      explanationDiv.style.maxHeight = '250px';
+      explanationDiv.style.overflowY = 'auto';
+      explanationDiv.style.fontSize = '13px';
+      explanationDiv.style.lineHeight = '1.5';
+
+      if (data.results?.length > 0) {
+        data.results.forEach((item, idx) => {
+          const eqTitle = document.createElement('div');
+          eqTitle.innerHTML = `<strong>🔢 Equation ${idx + 1}</strong>:<br><code>${item.expression}</code>`;
+          eqTitle.style.margin = '10px 0 6px';
+          explanationDiv.appendChild(eqTitle);
+
+          const solText = document.createElement('div');
+          solText.innerHTML = cleanLaTeXExplanation(item.solution);
+          explanationDiv.appendChild(solText);
+
+          const divider = document.createElement('hr');
+          divider.style.margin = '10px 0';
+          explanationDiv.appendChild(divider);
+        });
+      } else {
+        explanationDiv.innerText = "⚠️ No solution received. Make sure the equation is correct.";
+      }
+
+      solutionDiv.appendChild(explanationDiv);
+      overlay.appendChild(solutionDiv);
+    } catch (err) {
+      console.error("❌ Solve error:", err);
+      alert("⚠️ Failed to solve the problem. Check if backend is running.");
+    }
   };
 
   const toggleBtn = document.createElement('button');
